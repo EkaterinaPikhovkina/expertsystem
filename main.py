@@ -13,7 +13,7 @@ dp = Dispatcher()
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
     await message.answer("Бот запущен! Связь с сервером установлена.")
-    await message.answer("Следующим шагом мы подключим твою базу данных MySQL.")
+    await message.answer("тест")
 
 async def main():
     print("Бот вышел в сеть...")
