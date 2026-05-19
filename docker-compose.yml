@@ -1,5 +1,5 @@
 services:
   bot:
-    build: ./expertsystem
+    build: .
     restart: unless-stopped
-    env_file: ./expertsystem/.env
+    env_file: ./.env
