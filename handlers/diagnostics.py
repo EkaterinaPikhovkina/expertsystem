@@ -124,7 +124,7 @@ async def led_los_answer(callback: CallbackQuery, state: FSMContext, pool) -> No
     msg = texts.MESSAGES.get(diagnosis.message_key, texts.LED_UNKNOWN)
 
     created, ticket_id = await _check_and_maybe_create_ticket(
-        pool, callback.from_user.id, client_id, "no_internet", [diagnosis]
+        pool, client_id, "no_internet", [diagnosis]
     )
     if ticket_id and not created:
         msg += "\n\n" + texts.TICKET_ALREADY_OPEN
@@ -173,29 +173,26 @@ async def _run_low_speed_diagnostic(
 
     client = await queries.get_client_by_id(pool, client_id)
 
-    if not client or not client.get("onu_id"):
-        ticket_id = await queries.create_ticket(pool, client_id, "low_speed", "{}")
-        await callback.message.answer(
-            texts.NO_ONU_DATA + "\n\n" + texts.TICKET_CREATED.format(ticket_id=ticket_id)
-        )
+    if not client:
         return
 
-    onu_row = await queries.get_onu_data(pool, client["onu_id"])
+    onu_row = await queries.get_onu_data(pool, client_id)
     if not onu_row:
-        ticket_id = await queries.create_ticket(pool, client_id, "low_speed", "{}")
+        created, t_id = await _check_and_maybe_create_ticket(pool, client_id, "low_speed", [])
         await callback.message.answer(
-            texts.NO_ONU_DATA + "\n\n" + texts.TICKET_CREATED.format(ticket_id=ticket_id)
+            texts.NO_ONU_DATA + f"\n\nНомер заявки: #{t_id}"
         )
         return
 
     olt = olt_data_from_db_row(onu_row)
-    diagnoses = evaluate(olt, client["tariff_speed"])
+
+    diagnoses = evaluate(olt, client["speed_limit"])
 
     msg = _build_diagnosis_text(diagnoses)
     msg += texts.LOW_SPEED_EXTRA
 
     created, ticket_id = await _check_and_maybe_create_ticket(
-        pool, callback.from_user.id, client_id, "low_speed", diagnoses
+        pool, client_id, "low_speed", diagnoses
     )
     if ticket_id and not created:
         msg += "\n\n" + texts.TICKET_ALREADY_OPEN
